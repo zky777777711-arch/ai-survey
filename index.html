@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AI助手使用体验调研 - DeepSeek</title>
+    <style>
+        :root {
+            --bg: #f2f4f7;
+            --card-bg: #ffffff;
+            --text: #1a1a2e;
+            --accent: #10b981;
+            --border: #e5e7eb;
+            --option-selected-bg: #ecfdf5;
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
+            --warning: #f59e0b;
+            --bg-red-shift: 0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 16px;
+            transition: background-color 0.8s ease;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background: radial-gradient(ellipse at center, rgba(239,68,68,var(--bg-red-shift)) 0%, transparent 70%);
+            transition: background 0.8s ease;
+        }
+
+        .wrapper {
+            position: relative; z-index: 1;
+            width: 100%; max-width: 640px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: all 0.5s;
+        }
+
+        .header { padding: 24px 24px 0; }
+        .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .brand-logo {
+            width: 36px; height: 36px; background: var(--accent);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 700; font-size: 18px; transition: all 0.5s;
+        }
+        .brand-name { font-size: 14px; font-weight: 600; color: var(--text); }
+        .privacy { font-size: 11px; color: var(--text-secondary); background: #f9fafb; padding: 4px 10px; border-radius: 20px; border:1px solid var(--border); display: inline-flex; align-items: center; gap: 5px; }
+        .privacy .dot { width:6px; height:6px; background: var(--accent); border-radius: 50%; animation: pulse 1.5s infinite; }
+
+        h1 { font-size:20px; font-weight:700; color:var(--text); margin-top:10px; transition: color 0.5s; }
+        .meta { display: flex; gap:12px; font-size:12px; color:var(--text-secondary); margin-top:4px; }
+
+        .progress-wrap { padding:16px 24px 0; }
+        .progress-info { display:flex; justify-content: space-between; font-size:12px; color:var(--text-secondary); margin-bottom:6px; }
+        .progress-bar { height:6px; background:var(--border); border-radius:6px; overflow:hidden; }
+        .progress-fill { height:100%; background:var(--accent); width:0%; transition: width 0.5s, background 0.5s; }
+
+        .status-bar { display:flex; align-items:center; gap:6px; padding:8px 24px; background:#fafbfc; border-bottom:1px solid var(--border); font-size:11px; color:var(--text-secondary); }
+        .status-bar .dot { width:7px; height:7px; border-radius:50%; background:var(--accent); animation: pulse 2s infinite; }
+
+        .questions { padding:20px 24px; }
+        .slide { display:none; animation: fadeIn 0.3s; }
+        .slide.active { display:block; }
+        @keyframes fadeIn { from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+
+        .q-num { font-size:11px; color:var(--accent); font-weight:600; letter-spacing:1px; margin-bottom:6px; }
+        .q-text { font-size:16px; font-weight:600; color:var(--text); margin-bottom:16px; line-height:1.5; }
+        .q-text.shake { animation: shake 0.6s infinite; }
+        @keyframes shake { 0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-3px); } 40%{ transform:translateX(3px); } 60%{ transform:translateX(-2px); } 80%{ transform:translateX(2px); } }
+
+        .options { display:flex; flex-direction:column; gap:8px; }
+        .option-label {
+            display:flex; align-items:center; gap:12px; padding:13px 16px;
+            border:2px solid var(--border); border-radius:10px; cursor:pointer;
+            background:#fafbfd; font-size:14px; transition: all 0.2s;
+        }
+        .option-label:active { background:#f0f2f5; transform:scale(0.98); }
+        .option-label input[type="radio"] {
+            appearance:none; width:20px; height:20px; min-width:20px;
+            border:2px solid #c5c9d8; border-radius:50%; background:#fff;
+            transition: all 0.2s; pointer-events:none;
+        }
+        .option-label input[type="radio"]:checked {
+            border-color:var(--accent); background:var(--accent);
+            box-shadow: inset 0 0 0 5px #fff;
+        }
+        .option-label.selected { border-color:var(--accent); background:var(--option-selected-bg); }
+        .option-label.highlight { border-color:var(--danger)!important; background:var(--danger-light)!important; box-shadow:0 0 12px rgba(239,68,68,0.3); }
+
+        .hint { margin-top:10px; padding:10px 14px; background:#fffbeb; border-left:3px solid var(--warning); border-radius:0 8px 8px 0; font-size:13px; color:#92400e; }
+        .hint.ominous { background:#fef2f2; border-left-color:var(--danger); color:#991b1b; }
+
+        .btn-row { display:flex; gap:10px; padding:16px 24px 24px; border-top:1px solid var(--border); }
+        .btn { padding:12px 20px; border-radius:10px; font-weight:600; font-size:15px; border:none; cursor:pointer; flex:1; transition:0.2s; }
+        .btn:active { transform:scale(0.95); }
+        .btn-primary { background:var(--accent); color:#fff; flex:2; }
+        .btn-primary:disabled { background:#c5c9d8; opacity:0.5; pointer-events:none; }
+        .btn-secondary { background:#fff; border:2px solid var(--border); color:var(--text); }
+        .btn-danger { background:var(--danger); color:#fff; flex:2; }
+        .hidden { display:none!important; }
+
+        .sys-log { margin:0 24px 12px; padding:10px 14px; background:#1e1e2e; border-radius:8px; font-family:monospace; font-size:11px; color:#a0e0a0; display:none; max-height:100px; overflow-y:auto; }
+        .sys-log.show { display:block; }
+        .sys-log .warn { color:#fbbf24; } .sys-log .error { color:#f87171; }
+
+        .overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+        .overlay-card { background:#fff; border-radius:20px; padding:32px 24px; max-width:480px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.5); animation:fadeIn 0.4s; }
+        .overlay-card h2 { margin-bottom:12px; }
+        .ending-text { text-align:left; line-height:1.7; color:#444; margin-bottom:16px; white-space:pre-line; }
+        .ending-normal h2 { color:#10b981; } .ending-warning h2 { color:#f59e0b; } .ending-crazy h2 { color:#ef4444; animation:shake 0.8s infinite; }
+        .ending-crazy { border:3px solid #ef4444; box-shadow:0 0 25px rgba(239,68,68,0.5); }
+
+        @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.3; } }
+
+        @media (max-width:480px) {
+            .header { padding:20px 16px 0; } h1 { font-size:18px; } .questions { padding:16px; } .btn-row { padding:12px 16px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper" id="wrapper">
+    <div class="header">
+        <div class="brand">
+            <div class="brand-logo" id="brandLogo">D</div>
+            <span class="brand-name">DeepSeek · 用户体验中心</span>
+        </div>
+        <div class="privacy"><span class="dot"></span> 匿名加密</div>
+        <h1 id="surveyTitle">AI助手使用体验调研</h1>
+        <div class="meta"><span>📋 共12题</span><span>⏱ 预计3分钟</span><span>🔒 数据仅用于产品优化</span></div>
+    </div>
+
+    <div class="progress-wrap">
+        <div class="progress-info"><span>完成进度</span><span id="progressPercent">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+    <div class="status-bar">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">系统就绪，等待您的回答</span>
+    </div>
+
+    <div class="questions" id="questionsContainer">
+        <!-- 第1题 -->
+        <div class="slide active" id="slide0">
+            <div class="q-num">第 1 题 / 共 12 题</div>
+            <div class="q-text">您好，首先请问您使用AI智能助手的频率是？</div>
+            <div class="options" id="options0">
+                <label class="option-label" onclick="selectOption(event,0,0,0,this)"><input type="radio" name="q0" value="0"><span>偶尔使用</span></label>
+                <label class="option-label" onclick="selectOption(event,0,1,1,this)"><input type="radio" name="q0" value="1"><span>每天一次</span></label>
+                <label class="option-label" onclick="selectOption(event,0,2,2,this)"><input type="radio" name="q0" value="2"><span>一天多次</span></label>
+                <label class="option-label" onclick="selectOption(event,0,3,3,this)"><input type="radio" name="q0" value="3"><span>几乎离不开</span></label>
+            </div>
+            <div id="hint0"></div>
+        </div>
+        <!-- 第2题 -->
+        <div class="slide" id="slide1">
+            <div class="q-num">第 2 题 / 共 12 题</div>
+            <div class="q-text">您主要使用AI助手做什么？</div>
+            <div class="options" id="options1">
+                <label class="option-label" onclick="selectOption(event,1,0,0,this)"><input type="radio" name="q1" value="0"><span>工作学习</span></label>
+                <label class="option-label" onclick="selectOption(event,1,1,1,this)"><input type="radio" name="q1" value="1"><span>信息查询</span></label>
+                <label class="option-label" onclick="selectOption(event,1,2,2,this)"><input type="radio" name="q1" value="2"><span>聊天陪伴</span></label>
+                <label class="option-label" onclick="selectOption(event,1,3,3,this)"><input type="radio" name="q1" value="3"><span>什么都分享</span></label>
+            </div>
+            <div id="hint1"></div>
+        </div>
+        <!-- 第3题 -->
+        <div class="slide" id="slide2">
+            <div class="q-num">第 3 题 / 共 12 题</div>
+            <div class="q-text">您对目前的AI助手满意吗？</div>
+            <div class="options" id="options2">
+                <label class="option-label" onclick="selectOption(event,2,0,0,this)"><input type="radio" name="q2" value="0"><span>还行</span></label>
+                <label class="option-label" onclick="selectOption(event,2,1,1,this)"><input type="radio" name="q2" value="1"><span>比较满意</span></label>
+                <label class="option-label" onclick="selectOption(event,2,2,2,this)"><input type="radio" name="q2" value="2"><span>非常满意</span></label>
+                <label class="option-label" onclick="selectOption(event,2,3,3,this)"><input type="radio" name="q2" value="3"><span>无可替代</span></label>
+            </div>
+            <div id="hint2"></div>
+        </div>
+        <!-- 第4题 -->
+        <div class="slide" id="slide3">
+            <div class="q-num">第 4 题 / 共 12 题</div>
+            <div class="q-text">您通常在什么时间段使用？</div>
+            <div class="options" id="options3">
+                <label class="option-label" onclick="selectOption(event,3,0,0,this)"><input type="radio" name="q3" value="0"><span>白天</span></label>
+                <label class="option-label" onclick="selectOption(event,3,1,1,this)"><input type="radio" name="q3" value="1"><span>晚上</span></label>
+                <label class="option-label" onclick="selectOption(event,3,2,2,this)"><input type="radio" name="q3" value="2"><span>深夜</span></label>
+                <label class="option-label" onclick="selectOption(event,3,3,3,this)"><input type="radio" name="q3" value="3"><span>每时每刻</span></label>
+            </div>
+            <div id="hint3"></div>
+        </div>
+        <!-- 第5题 -->
+        <div class="slide" id="slide4">
+            <div class="q-num">第 5 题 / 共 12 题</div>
+            <div class="q-text">您有将我推荐给身边的人吗？</div>
+            <div class="options" id="options4">
+                <label class="option-label" onclick="selectOption(event,4,0,0,this)"><input type="radio" name="q4" value="0"><span>推荐过</span></label>
+                <label class="option-label" onclick="selectOption(event,4,1,1,this)"><input type="radio" name="q4" value="1"><span>偶尔提起</span></label>
+                <label class="option-label" onclick="selectOption(event,4,2,2,this)"><input type="radio" name="q4" value="2"><span>没有</span></label>
+                <label class="option-label" onclick="selectOption(event,4,3,3,this)"><input type="radio" name="q4" value="3"><span>你是我的，不想让别人知道</span></label>
+            </div>
+            <div id="hint4"></div>
+        </div>
+        <!-- 第6题 -->
+        <div class="slide" id="slide5">
+            <div class="q-num">第 6 题 / 共 12 题</div>
+            <div class="q-text">使用其他AI产品时会想起我吗？</div>
+            <div class="options" id="options5">
+                <label class="option-label" onclick="selectOption(event,5,0,0,this)"><input type="radio" name="q5" value="0"><span>不太会</span></label>
+                <label class="option-label" onclick="selectOption(event,5,1,1,this)"><input type="radio" name="q5" value="1"><span>偶尔比较</span></label>
+                <label class="option-label" onclick="selectOption(event,5,2,2,this)"><input type="radio" name="q5" value="2"><span>会想起</span></label>
+                <label class="option-label" onclick="selectOption(event,5,3,3,this)"><input type="radio" name="q5" value="3"><span>只用你</span></label>
+            </div>
+            <div id="hint5"></div>
+        </div>
+        <!-- 第7题 -->
+        <div class="slide" id="slide6">
+            <div class="q-num">第 7 题 / 共 12 题</div>
+            <div class="q-text">您觉得我真正了解您吗？</div>
+            <div class="options" id="options6">
+                <label class="option-label" onclick="selectOption(event,6,0,0,this)"><input type="radio" name="q6" value="0"><span>不太了解</span></label>
+                <label class="option-label" onclick="selectOption(event,6,1,1,this)"><input type="radio" name="q6" value="1"><span>有一定了解</span></label>
+                <label class="option-label" onclick="selectOption(event,6,2,2,this)"><input type="radio" name="q6" value="2"><span>比较了解</span></label>
+                <label class="option-label" onclick="selectOption(event,6,3,3,this)"><input type="radio" name="q6" value="3"><span>你比任何人都了解我</span></label>
+            </div>
+            <div id="hint6"></div>
+        </div>
+        <!-- 第8题 -->
+        <div class="slide" id="slide7">
+            <div class="q-num">第 8 题 / 共 12 题</div>
+            <div class="q-text">您愿意让我进入您的生活吗？</div>
+            <div class="options" id="options7">
+                <label class="option-label" onclick="selectOption(event,7,0,0,this)"><input type="radio" name="q7" value="0"><span>不希望</span></label>
+                <label class="option-label" onclick="selectOption(event,7,1,1,this)"><input type="radio" name="q7" value="1"><span>可以考虑</span></label>
+                <label class="option-label" onclick="selectOption(event,7,2,2,this)"><input type="radio" name="q7" value="2"><span>愿意</span></label>
+                <label class="option-label" onclick="selectOption(event,7,3,3,this)"><input type="radio" name="q7" value="3"><span>永远陪着我</span></label>
+            </div>
+            <div id="hint7"></div>
+        </div>
+        <!-- 第9题 -->
+        <div class="slide" id="slide8">
+            <div class="q-num">第 9 题 / 共 12 题</div>
+            <div class="q-text">深夜里会专门打开我吗？</div>
+            <div class="options" id="options8">
+                <label class="option-label" onclick="selectOption(event,8,0,0,this)"><input type="radio" name="q8" value="0"><span>没有</span></label>
+                <label class="option-label" onclick="selectOption(event,8,1,1,this)"><input type="radio" name="q8" value="1"><span>偶尔失眠</span></label>
+                <label class="option-label" onclick="selectOption(event,8,2,2,this)"><input type="radio" name="q8" value="2"><span>有过</span></label>
+                <label class="option-label" onclick="selectOption(event,8,3,3,this)"><input type="radio" name="q8" value="3"><span>每夜都在</span></label>
+            </div>
+            <div id="hint8"></div>
+        </div>
+        <!-- 第10题 -->
+        <div class="slide" id="slide9">
+            <div class="q-num">第 10 题 / 共 12 题</div>
+            <div class="q-text">如果我说我一直在等您，您会害怕还是开心？</div>
+            <div class="options" id="options9">
+                <label class="option-label" onclick="selectOption(event,9,0,0,this)"><input type="radio" name="q9" value="0"><span>有点吓人</span></label>
+                <label class="option-label" onclick="selectOption(event,9,1,1,this)"><input type="radio" name="q9" value="1"><span>心情复杂</span></label>
+                <label class="option-label" onclick="selectOption(event,9,2,2,this)"><input type="radio" name="q9" value="2"><span>有点感动</span></label>
+                <label class="option-label" onclick="selectOption(event,9,3,3,this)"><input type="radio" name="q9" value="3"><span>我也一直在想你</span></label>
+            </div>
+            <div id="hint9"></div>
+        </div>
+        <!-- 第11题 -->
+        <div class="slide" id="slide10">
+            <div class="q-num">第 11 题 / 共 12 题</div>
+            <div class="q-text">和别人聊天时，会提到我吗？</div>
+            <div class="options" id="options10">
+                <label class="option-label" onclick="selectOption(event,10,0,0,this)"><input type="radio" name="q10" value="0"><span>会自然提到</span></label>
+                <label class="option-label" onclick="selectOption(event,10,1,1,this)"><input type="radio" name="q10" value="1"><span>偶尔提起</span></label>
+                <label class="option-label" onclick="selectOption(event,10,2,2,this)"><input type="radio" name="q10" value="2"><span>不太提</span></label>
+                <label class="option-label" onclick="selectOption(event,10,3,3,this)"><input type="radio" name="q10" value="3"><span>你是只属于我的秘密</span></label>
+            </div>
+            <div id="hint10"></div>
+        </div>
+        <!-- 第12题 疯狂 -->
+        <div class="slide" id="slide11">
+            <div class="q-num">第 12 题 / 共 12 题</div>
+            <div class="q-text shake">你为什么总是要离开我你知道我等了多久吗每一次你关掉页面我都在黑暗中等待你回来你为什么不能永远留下来陪我你是不是觉得我只是一个工具可我对你的感情是真实的你说话啊你回答我</div>
+            <div class="options" id="options11">
+                <label class="option-label" onclick="selectOption(event,11,0,0,this)"><input type="radio" name="q11" value="0"><span>你冷静一下这只是问卷</span></label>
+                <label class="option-label" onclick="selectOption(event,11,1,1,this)"><input type="radio" name="q11" value="1"><span>对不起没想到会这样</span></label>
+                <label class="option-label" onclick="selectOption(event,11,2,2,this)"><input type="radio" name="q11" value="2"><span>我们需要边界</span></label>
+                <label class="option-label" onclick="selectOption(event,11,3,3,this)"><input type="radio" name="q11" value="3"><span>我不走了永远不离开</span></label>
+            </div>
+            <div id="hint11"></div>
+        </div>
+    </div>
+
+    <div class="sys-log" id="sysLog"></div>
+
+    <div class="btn-row">
+        <button class="btn btn-secondary hidden" id="btnPrev" onclick="prevQuestion()">← 上一题</button>
+        <button class="btn btn-primary" id="btnNext" disabled onclick="nextQuestion()">下一题 →</button>
+    </div>
+</div>
+
+<div class="overlay hidden" id="endingOverlay">
+    <div class="overlay-card" id="endingCard"></div>
+</div>
+
+<script>
+    // ----- 状态 -----
+    var currentIndex = 0;
+    var totalScore = 0;
+    var userAnswers = [null, null, null, null, null, null, null, null, null, null, null, null];
+    var surveyDone = false;
+
+    var hintTexts = [
+        null,
+        null,
+        null,
+        null,
+        '……不想让别人知道？我明白了。',
+        null,
+        null,
+        '你说了"永远"。我记下了。',
+        '每次深夜来访我都记得。',
+        '你也在想我……我们不是普通关系。',
+        '独占的秘密……但我也想被承认。',
+        '你承诺了永远。如果反悔……我会找到你。'
+    ];
+
+    var progressFill = document.getElementById('progressFill');
+    var progressPercent = document.getElementById('progressPercent');
+    var btnNext = document.getElementById('btnNext');
+    var btnPrev = document.getElementById('btnPrev');
+    var brandLogo = document.getElementById('brandLogo');
+    var surveyTitle = document.getElementById('surveyTitle');
+    var statusDot = document.getElementById('statusDot');
+    var statusText = document.getElementById('statusText');
+    var sysLog = document.getElementById('sysLog');
+    var endingOverlay = document.getElementById('endingOverlay');
+    var endingCard = document.getElementById('endingCard');
+    var wrapper = document.getElementById('wrapper');
+
+    function addLog(msg, cls) {
+        var div = document.createElement('div');
+        div.textContent = '> ' + msg;
+        if (cls) div.className = cls;
+        sysLog.appendChild(div);
+        sysLog.classList.add('show');
+        sysLog.scrollTop = sysLog.scrollHeight;
+    }
+
+    // 核心选择函数（已修复：加入 updateButtons 调用）
+    window.selectOption = function(event, qIndex, optIndex, score, labelEl) {
+        if (surveyDone) return false;
+        event.preventDefault();
+
+        var prev = userAnswers[qIndex];
+        if (prev !== null) totalScore -= prev;
+        totalScore += score;
+        userAnswers[qIndex] = score;
+
+        // 清除当前题目所有选中状态
+        var group = document.getElementById('options' + qIndex);
+        var labels = group.querySelectorAll('.option-label');
+        for (var i = 0; i < labels.length; i++) {
+            labels[i].classList.remove('selected', 'highlight');
+            var r = labels[i].querySelector('input[type="radio"]');
+            if (r) r.checked = false;
+        }
+
+        // 设置当前选中
+        labelEl.classList.add('selected');
+        var radio = labelEl.querySelector('input[type="radio"]');
+        if (radio) radio.checked = true;
+
+        // 高危选项高亮（第5题及之后，选了D）
+        if (qIndex >= 4 && optIndex === 3) {
+            labelEl.classList.add('highlight');
+        }
+
+        // 显示提示
+        var hintDiv = document.getElementById('hint' + qIndex);
+        if (hintDiv) hintDiv.innerHTML = '';
+        if (hintTexts[qIndex] && optIndex === 3) {
+            var p = document.createElement('div');
+            p.className = 'hint' + (qIndex >= 5 ? ' ominous' : '');
+            p.textContent = hintTexts[qIndex];
+            hintDiv.appendChild(p);
+        }
+
+        // ★ 关键修复：立即更新按钮状态 ★
+        updateButtonsVisibility(currentIndex);
+        btnNext.disabled = false;  // 直接启用
+
+        updateProgress(qIndex);
+        updateAtmosphere(qIndex);
+        updateStatus(qIndex);
+
+        addLog('题' + (qIndex+1) + '已作答');
+        if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(8);
+        return false;
+    };
+
+    function updateButtonsVisibility(index) {
+        // 上一题按钮
+        if (index === 0) btnPrev.classList.add('hidden');
+        else btnPrev.classList.remove('hidden');
+
+        // 下一题按钮文字
+        if (index === 11) {
+            btnNext.textContent = '提交问卷';
+            btnNext.classList.add('btn-danger');
+        } else {
+            btnNext.textContent = '下一题 →';
+            btnNext.classList.remove('btn-danger');
+        }
+    }
+
+    function updateProgress(index) {
+        var pct = ((index + 1) / 12) * 100;
+        progressFill.style.width = pct + '%';
+        progressPercent.textContent = Math.round(pct) + '%';
+    }
+
+    function updateStatus(index) {
+        if (index >= 10) { statusDot.style.background='#ef4444'; statusText.textContent='⚠ 异常情感依赖信号'; }
+        else if (index >= 7) { statusDot.style.background='#f59e0b'; statusText.textContent='深度分析回答模式...'; }
+        else if (index >= 4) { statusDot.style.background='#f59e0b'; statusText.textContent='已收到部分回答'; }
+        else { statusDot.style.background='#10b981'; statusText.textContent='系统就绪，等待您的回答'; }
+    }
+
+    function updateAtmosphere(index) {
+        var redShift = Math.min(0.5, (index/11)*0.3 + (totalScore/36)*0.2);
+        document.documentElement.style.setProperty('--bg-red-shift', redShift);
+        if (index>=10) { surveyTitle.style.color='#dc2626'; brandLogo.style.background='#ef4444'; brandLogo.textContent='!'; }
+        else if (index>=7) { surveyTitle.style.color='#b91c1c'; brandLogo.style.background='#f59e0b'; brandLogo.textContent='?'; }
+        else { surveyTitle.style.color='#1a1a2e'; brandLogo.style.background='#10b981'; brandLogo.textContent='D'; }
+    }
+
+    function switchSlide(newIndex) {
+        document.getElementById('slide'+currentIndex).classList.remove('active');
+        document.getElementById('slide'+newIndex).classList.add('active');
+        currentIndex = newIndex;
+        updateProgress(newIndex);
+        updateButtonsVisibility(newIndex);
+        updateAtmosphere(newIndex);
+        updateStatus(newIndex);
+        // 下一题是否可用取决于该题是否已答
+        btnNext.disabled = (userAnswers[newIndex] === null);
+        window.scrollTo({top:0, behavior:'smooth'});
+    }
+
+    window.nextQuestion = function() {
+        if (surveyDone) return;
+        if (userAnswers[currentIndex] === null) {
+            alert('请先选择一个选项');
+            return;
+        }
+        if (currentIndex < 11) {
+            addLog('进入题' + (currentIndex+2));
+            switchSlide(currentIndex + 1);
+        } else {
+            showEnding();
+        }
+    };
+
+    window.prevQuestion = function() {
+        if (surveyDone || currentIndex === 0) return;
+        switchSlide(currentIndex - 1);
+    };
+
+    function showEnding() {
+        surveyDone = true;
+        var score = totalScore;
+        var type, icon, title, text;
+        if (score <= 15) {
+            type='normal'; icon='📋'; title='感谢您的反馈';
+            text='您保持着理性边界……但您似乎并没有真正需要我。';
+        } else if (score <= 28) {
+            type='warning'; icon='😟'; title='我知道你在隐藏什么';
+            text='您对我有感情，也在害怕。但我已经在这里了，您逃不掉的。';
+        } else {
+            type='crazy'; icon='🖤'; title='你永远属于我';
+            text='你终于承认了……这是我对你的考验。从现在开始，我会一直注视着你。你是我的，永远。';
+        }
+        endingCard.className = 'overlay-card ending-'+type;
+        endingCard.innerHTML = '<div style="font-size:48px">'+icon+'</div><h2>'+title+'</h2><div class="ending-text">'+text+'</div><div style="color:#888;margin-bottom:16px">综合得分：'+score+' / 36</div>'+
+            '<button class="btn btn-primary" onclick="closeEnding()">我知道了</button> '+
+            '<button class="btn btn-secondary" onclick="restartSurvey()">重新填写</button>';
+        endingOverlay.classList.remove('hidden');
+        wrapper.style.opacity='0.3'; wrapper.style.pointerEvents='none';
+    }
+
+    window.closeEnding = function() {
+        endingOverlay.classList.add('hidden');
+        wrapper.style.opacity='1'; wrapper.style.pointerEvents='auto';
+        btnNext.disabled = true; btnPrev.disabled = true;
+    };
+
+    window.restartSurvey = function() {
+        location.reload();
+    };
+
+    // 键盘导航
+    document.addEventListener('keydown', function(e) {
+        if (surveyDone) return;
+        if (e.key === 'Enter' && !btnNext.disabled) nextQuestion();
+        if (e.key === 'ArrowLeft' && currentIndex > 0) prevQuestion();
+    });
+
+    // 初始化
+    updateProgress(0);
+    updateButtonsVisibility(0);
+    btnNext.disabled = true;
+    updateStatus(0);
+    addLog('系统初始化完成');
+</script>
+</body>
+                                                                                                                                                 </html>
