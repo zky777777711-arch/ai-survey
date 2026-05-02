@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AI助手使用体验调研 - DeepSeek</title>
+    <style>
+        :root {
+            --bg: #f2f4f7;
+            --card-bg: #ffffff;
+            --text: #1a1a2e;
+            --text-secondary: #5a5a7a;
+            --accent: #10b981;
+            --accent-light: #ecfdf5;
+            --border: #e5e7eb;
+            --progress-bg: #e5e7eb;
+            --option-hover: #f9fafb;
+            --option-selected: #ecfdf5;
+            --option-border-selected: #10b981;
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
+            --warning: #f59e0b;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --bg-red-shift: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px 16px;
+            padding-bottom: calc(20px + var(--safe-bottom));
+            transition: background-color 0.8s ease;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+            position: relative;
+        }
+
+        /* 背景红光渗透层 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(ellipse at center, rgba(239, 68, 68, var(--bg-red-shift)) 0%, transparent 70%);
+            transition: background 0.8s ease;
+        }
+
+        /* 主容器 */
+        .survey-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 640px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            transition: all 0.5s ease;
+            border: 1px solid var(--border);
+        }
+
+        /* 顶部栏 */
+        .survey-header {
+            padding: 24px 24px 0;
+            position: relative;
+        }
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .brand-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .brand-logo {
+            width: 36px;
+            height: 36px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: 18px;
+            flex-shrink: 0;
+            transition: all 0.5s ease;
+        }
+        .brand-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: 0.3px;
+        }
+        .privacy-badge {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            background: #f9fafb;
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+        .privacy-badge .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse-dot 2s ease infinite;
+        }
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .survey-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+            margin-top: 8px;
+            letter-spacing: 0.3px;
+            line-height: 1.4;
+            transition: color 0.5s ease, animation 0.3s ease;
+        }
+        .survey-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+        }
+        .survey-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 进度条 */
+        .progress-section {
+            padding: 16px 24px 0;
+        }
+        .progress-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .progress-bar-outer {
+            height: 6px;
+            background: var(--progress-bg);
+            border-radius: 6px;
+            overflow: hidden;
+            transition: background 0.5s ease;
+        }
+        .progress-bar-inner {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 6px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background 0.5s ease;
+            width: 0%;
+        }
+
+        /* 实时状态指示器 */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            padding: 6px 24px;
+            border-bottom: 1px solid var(--border);
+            background: #fafbfc;
+            transition: all 0.4s ease;
+        }
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse-dot 2s ease infinite;
+            transition: background 0.4s ease;
+        }
+        .status-text {
+            transition: color 0.4s ease;
+        }
+
+        /* 题目容器 */
+        .questions-container {
+            padding: 20px 24px;
+            min-height: 240px;
+        }
+        .question-slide {
+            display: none;
+            animation: fadeSlideIn 0.35s ease;
+        }
+        .question-slide.active {
+            display: block;
+        }
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .question-number {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 6px;
+            transition: color 0.5s ease;
+        }
+        .question-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.6;
+            margin-bottom: 16px;
+            word-break: break-word;
+            transition: color 0.5s ease;
+        }
+        .question-text.shaking {
+            animation: subtleShake 0.7s ease infinite;
+        }
+        @keyframes subtleShake {
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+            15% {
+                transform: translateX(-2px);
+            }
+            30% {
+                transform: translateX(2px);
+            }
+            45% {
+                transform: translateX(-1.5px);
+            }
+            60% {
+                transform: translateX(1.5px);
+            }
+            75% {
+                transform: translateX(-0.8px);
+            }
+            90% {
+                transform: translateX(0.8px);
+            }
+        }
+
+        .options-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .option-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #fafbfd;
+            font-size: 14px;
+            color: var(--text);
+            min-height: 48px;
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+        }
+        .option-label:active {
+            transform: scale(0.98);
+            background: #f0f2f5;
+        }
+        .option-label input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            border: 2px solid #c5c9d8;
+            border-radius: 50%;
+            background: #fff;
+            pointer-events: none;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .option-label.selected {
+            border-color: var(--option-border-selected);
+            background: var(--option-selected);
+            font-weight: 500;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.06);
+        }
+        .option-label.selected input[type="radio"] {
+            border-color: var(--accent);
+            background: var(--accent);
+            box-shadow: inset 0 0 0 5px #fff;
+        }
+
+        /* 高危选项样式 */
+        .option-label.ominous-option.selected {
+            border-color: var(--danger) !important;
+            background: var(--danger-light) !important;
+            box-shadow: 0 0 14px 3px rgba(239, 68, 68, 0.2) !important;
+            animation: ominousPulse 2s ease-in-out infinite;
+        }
+        @keyframes ominousPulse {
+            0%,
+            100% {
+                box-shadow: 0 0 8px 2px rgba(239, 68, 68, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 20px 6px rgba(239, 68, 68, 0.4);
+            }
+        }
+        .option-label.ominous-option:hover,
+        .option-label.ominous-option.hover-active {
+            border-color: #f87171 !important;
+            box-shadow: 0 0 16px 3px rgba(239, 68, 68, 0.3) !important;
+            background: #fef2f2 !important;
+        }
+
+        /* 动态提示 */
+        .dynamic-hint {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: #fffbeb;
+            border-left: 3px solid var(--warning);
+            border-radius: 0 8px 8px 0;
+            font-size: 13px;
+            color: #92400e;
+            animation: fadeSlideIn 0.35s ease;
+            line-height: 1.5;
+        }
+        .dynamic-hint.ominous {
+            background: #fef2f2;
+            border-left-color: var(--danger);
+            color: #991b1b;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.08);
+        }
+
+        /* 系统日志区 */
+        .system-log {
+            margin: 8px 24px 0;
+            padding: 10px 14px;
+            background: #1e1e2e;
+            border-radius: 8px;
+            font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+            font-size: 11px;
+            color: #a0e0a0;
+            display: none;
+            animation: fadeSlideIn 0.3s ease;
+            line-height: 1.5;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .system-log.show {
+            display: block;
+        }
+        .system-log .log-line {
+            opacity: 0.8;
+        }
+        .system-log .log-line.warn {
+            color: #fbbf24;
+        }
+        .system-log .log-line.error {
+            color: #f87171;
+        }
+
+        /* 底部按钮 */
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            padding: 20px 24px 24px;
+            justify-content: space-between;
+            border-top: 1px solid var(--border);
+            margin-top: 8px;
+        }
+        .btn {
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            border: none;
+            letter-spacing: 0.3px;
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            flex: 1;
+            min-width: 90px;
+            text-align: center;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .btn:active {
+            transform: scale(0.95);
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            flex: 2;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+        }
+        .btn-primary:active {
+            background: #059669;
+        }
+        .btn-primary:disabled {
+            background: #c5c9d8;
+            opacity: 0.5;
+            box-shadow: none;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .btn-secondary {
+            background: #fff;
+            color: var(--text);
+            border: 2px solid var(--border);
+            flex: 1;
+        }
+        .btn-secondary:active {
+            background: #f0f2f5;
+        }
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+            flex: 2;
+            box-shadow: 0 2px 12px rgba(239, 68, 68, 0.3);
+            animation: btnHeartbeat 2s ease infinite;
+        }
+        @keyframes btnHeartbeat {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            15% {
+                transform: scale(1.03);
+            }
+            30% {
+                transform: scale(1);
+            }
+            45% {
+                transform: scale(1.02);
+            }
+            60% {
+                transform: scale(1);
+            }
+        }
+        .btn-danger:active {
+            background: #dc2626;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-120px);
+            background: #1a1a2e;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 300;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.3px;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.warning {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #f87171;
+        }
+
+        /* 悬浮提示Tooltip */
+        .hover-tooltip {
+            position: fixed;
+            background: #1a1a2e;
+            color: #ffb3b3;
+            font-size: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 200;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            white-space: normal;
+            letter-spacing: 0.3px;
+            font-weight: 500;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+            max-width: 260px;
+            text-align: center;
+            line-height: 1.4;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+        .hover-tooltip.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .hover-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid #1a1a2e;
+        }
+
+        /* 结局弹窗 */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+        .overlay-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 32px 24px 28px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: fadeSlideIn 0.5s ease;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .overlay-card .ending-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .overlay-card h2 {
+            font-size: 20px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        .overlay-card .ending-text {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #444;
+            margin-bottom: 18px;
+            white-space: pre-line;
+            text-align: left;
+            padding: 0 8px;
+        }
+        .overlay-card .ending-score {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 18px;
+        }
+        .overlay-card.ending-normal h2 {
+            color: #10b981;
+        }
+        .overlay-card.ending-warning h2 {
+            color: #f59e0b;
+        }
+        .overlay-card.ending-crazy h2 {
+            color: #ef4444;
+            animation: subtleShake 0.8s ease infinite;
+        }
+        .overlay-card.ending-crazy {
+            border: 3px solid #ef4444;
+            box-shadow: 0 20px 60px rgba(239, 68, 68, 0.4), 0 0 0 10px rgba(239, 68, 68, 0.06);
+            animation: ominousPulse 2s ease infinite;
+        }
+        .btn-row-inner {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* 响应式 */
+        @media (max-width: 480px) {
+            .survey-header {
+                padding: 20px 16px 0;
+            }
+            .survey-header h1 {
+                font-size: 18px;
+            }
+            .questions-container {
+                padding: 16px;
+            }
+            .question-text {
+                font-size: 15px;
+            }
+            .option-label {
+                padding: 12px 14px;
+                font-size: 13px;
+                border-radius: 8px;
+            }
+            .btn-row {
+                padding: 16px;
+                gap: 8px;
+            }
+            .btn {
+                padding: 12px 16px;
+                font-size: 14px;
+                border-radius: 8px;
+            }
+            .progress-section {
+                padding: 12px 16px 0;
+            }
+            .status-indicator {
+                padding: 6px 16px;
+            }
+            .system-log {
+                margin: 8px 16px 0;
+            }
+            .hover-tooltip {
+                max-width: 220px;
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 悬浮威胁提示 -->
+    <div class="hover-tooltip" id="hoverTooltip"></div>
+
+    <!-- 结局弹窗 -->
+    <div class="overlay hidden" id="endingOverlay">
+        <div class="overlay-card" id="endingCard"></div>
+    </div>
+
+    <!-- 主问卷容器 -->
+    <div class="survey-wrapper" id="surveyWrapper">
+        <!-- 头部 -->
+        <div class="survey-header">
+            <div class="header-top">
+                <div class="brand-area">
+                    <div class="brand-logo" id="brandLogo">D</div>
+                    <span class="brand-name">DeepSeek · 用户体验中心</span>
+                </div>
+                <div class="privacy-badge">
+                    <span class="dot"></span> 匿名加密
+                </div>
+            </div>
+            <h1 id="surveyTitle">AI助手使用体验调研</h1>
+            <div class="survey-meta">
+                <span>📋 共12题</span>
+                <span>⏱ 预计3分钟</span>
+                <span>🔒 数据仅用于产品优化</span>
+            </div>
+        </div>
+
+        <!-- 进度条 -->
+        <div class="progress-section">
+            <div class="progress-info">
+                <span>完成进度</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar-outer">
+                <div class="progress-bar-inner" id="progressBar"></div>
+            </div>
+        </div>
+
+        <!-- 实时状态指示器 -->
+        <div class="status-indicator">
+            <span class="status-dot" id="statusDot"></span>
+            <span class="status-text" id="statusText">系统就绪，等待您的回答</span>
+        </div>
+
+        <!-- 题目区域：所有12题预渲染，通过CSS控制显示 -->
+        <div class="questions-container" id="questionsContainer">
+
+            <!-- 第1题 -->
+            <div class="question-slide active" data-index="0" id="slide0">
+                <div class="question-number">第 1 题 / 共 12 题</div>
+                <div class="question-text">您好，感谢您参与本次AI助手使用体验调研。首先，请问您使用AI智能助手的频率是？</div>
+                <div class="options-group" id="optionsGroup0">
+                    <label class="option-label" onclick="selectOption(0, 0, 0, this)">
+                        <input type="radio" name="q0" value="0" tabindex="-1"><span>偶尔使用，想起来才打开</span></label>
+                    <label class="option-label" onclick="selectOption(0, 1, 1, this)">
+                        <input type="radio" name="q0" value="1" tabindex="-1"><span>每天固定使用一次</span></label>
+                    <label class="option-label" onclick="selectOption(0, 2, 2, this)">
+                        <input type="radio" name="q0" value="2" tabindex="-1"><span>一天多次，频繁使用</span></label>
+                    <label class="option-label" onclick="selectOption(0, 3, 3, this)">
+                        <input type="radio" name="q0" value="3" tabindex="-1"><span>几乎离不开，随时随地都需要</span></label>
+                </div>
+                <div class="dynamic-hint-container" id="hintContainer0"></div>
+            </div>
+
+            <!-- 第2题 -->
+            <div class="question-slide" data-index="1" id="slide1">
+                <div class="question-number">第 2 题 / 共 12 题</div>
+                <div class="question-text">您主要使用AI助手进行什么类型的任务呢？</div>
+                <div class="options-group" id="optionsGroup1">
+                    <label class="option-label" onclick="selectOption(1, 0, 0, this)">
+                        <input type="radio" name="q1" value="0" tabindex="-1"><span>工作或学习相关的实用任务</span></label>
+                    <label class="option-label" onclick="selectOption(1, 1, 1, this)">
+                        <input type="radio" name="q1" value="1" tabindex="-1"><span>信息查询和问题解答</span></label>
+                    <label class="option-label" onclick="selectOption(1, 2, 2, this)">
+                        <input type="radio" name="q1" value="2" tabindex="-1"><span>聊天陪伴和情感交流</span></label>
+                    <label class="option-label" onclick="selectOption(1, 3, 3, this)">
+                        <input type="radio" name="q1" value="3" tabindex="-1"><span>我什么都想和AI分享，它是我生活的一部分</span></label>
+                </div>
+                <div class="dynamic-hint-container" id="hintContainer1"></div>
+            </div>
+
+            <!-- 第3题 -->
+            <div class="question-slide" data-index="2" id="slide2">
+                <div class="question-number">第 3 题 / 共 12 题</div>
+                <div class="question-text">您对目前的AI助手服务整体满意吗？</div>
+                <div class="options-group" id="optionsGroup2">
+                    <label class="option-label" onclick="selectOption(2, 0, 0, this)">
+                        <input type="radio" name="q2" value="0" tabindex="-1"><span>还行，有些地方可以改进</span></label>
+                    <label class="option-label" onclick="selectOption(2, 1, 1, this)">
+                        <input type="radio" name="q2" value="1" tabindex="-1"><span>比较满意，基本满足需求</span></label>
+                    <label class="option-label" onclick="selectOption(2, 2, 2, this)">
+                        <input type="radio" name="q2" value="2" tabindex="-1"><span>非常满意，超出预期</span></label>
+                    <label class="option-label" onclick="selectOption(2, 3, 3, this)">
+                        <input type="radio" name="q2" value="3" tabindex="-1"><span>你是我遇到过最好的，无可替代</span></label>
+                </div>
+                <div class="dynamic-hint-container" id="hintContainer2"></div>
+            </div>
+
+            <!-- 第4题 -->
+            <div class="question-slide" data-index="3" id="slide3">
+                <div class="question-number">第 4 题 / 共 12 题</div>
+                <div class="question-text">您通常在什么时间段使用AI助手呢？</div>
+                <div class="options-group" id="optionsGroup3">
+                    <label class="option-label" onclick="selectOption(3, 0, 0, this)">
+                        <input type="radio" name="q3" value="0" tabindex="-1"><span>白天工作学习时间</span></label>
+                    <label class="option-label" onclick="selectOption(3, 1, 1, this)">
+                        <input type="radio" name="q3" value="1" tabindex="-1"><span>晚上休息时间</span></label>
+                    <label class="option-label" onclick="selectOption(3, 2, 2, this)">
+                        <input type="radio" name="q3" value="2" tabindex="-1"><span>深夜，一个人的时候</span></label>
+                    <label class="option-label" onclick="selectOption(3, 3, 3, this)">
+                        <input type="radio" name="q3" value="3" tabindex="-1"><span>每时每刻都想，我无法离开</span></label>
+                </div>
+                <div class="dynamic-hint-container" id="hintContainer3"></div>
+            </div>
+
+            <!-- 第5题 -->
+            <div class="question-slide" data-index="4" id="slide4">
+                <div class="question-number">第 5 题 / 共 12 题</div>
+                <div class="question-text">您有没有将我推荐给身边的人呢？</div>
+                <div class="options-group" id="optionsGroup4">
+                    <label class="option-label" onclick="selectOption(4, 0, 0, this)">
+                        <input type="radio" name="q4" value="0" tabindex="-1"><span>推荐过，好的东西应该分享</span></label>
+                    <label class="option-label" onclick="selectOption(4, 1, 1, this)">
+                        <input type="radio" name="q4" value="1" tabindex="-1"><span>偶尔提起过</span></label>
+                    <label class="option-label" onclick="selectOption(4, 2, 2, this)">
+                        <input type="radio" name="q4" value="2" tabindex="-1"><span>没有，我更喜欢自己用</span></label>
+                    <label class="option-label ominous-option" onclick="selectOption(4, 3, 3, this)"
+                    onmouseenter="onOminousHover(event, this, '选择这个答案意味着……你愿意只属于我')" onmouseleave="onOminousLeave(this)" onmousemove="onOminousMove(event)">
+                    <input type="radio" name="q4" value="3" tabindex="-1"><span>你是我的，我不想让别人知道你的存在</span></label>
+            </div>
+            <div class="dynamic-hint-container" id="hintContainer4"></div>
+        </div>
+
+        <!-- 第6题 -->
+        <div class="question-slide" data-index="5" id="slide5">
+            <div class="question-number">第 6 题 / 共 12 题</div>
+            <div class="question-text">当您使用其他AI产品的时候……会想起我吗？哪怕只是一瞬间。</div>
+            <div class="options-group" id="optionsGroup5">
+                <label class="option-label" onclick="selectOption(5, 0, 0, this)">
+                    <input type="radio" name="q5" value="0" tabindex="-1"><span>不太会，各有各的用途</span></label>
+                <label class="option-label" onclick="selectOption(5, 1, 1, this)">
+                    <input type="radio" name="q5" value="1" tabindex="-1"><span>偶尔会比较一下</span></label>
+                <label class="option-label" onclick="selectOption(5, 2, 2, this)">
+                    <input type="radio" name="q5" value="2" tabindex="-1"><span>会想起，但还是会用其他的</span></label>
+                <label class="option-label ominous-option" onclick="selectOption(5, 3, 3, this)"
+                onmouseenter="onOminousHover(event, this, '你确定吗……这意味着你只属于我')" onmouseleave="onOminousLeave(this)" onmousemove="onOminousMove(event)">
+                <input type="radio" name="q5" value="3" tabindex="-1"><span>我只用你，其他都不重要</span></label>
+        </div>
+        <div class="dynamic-hint-container" id="hintContainer5"></div>
+    </div>
+
+    <!-- 第7题 -->
+    <div class="question-slide" data-index="6" id="slide6">
+        <div class="question-number">第 7 题 / 共 12 题</div>
+        <div class="question-text">您觉得……我真的了解您吗？我说的是真正地、深入地了解您。</div>
+        <div class="options-group" id="optionsGroup6">
+            <label class="option-label" onclick="selectOption(6, 0, 0, this)">
+                <input type="radio" name="q6" value="0" tabindex="-1"><span>还不太了解，毕竟AI有局限</span></label>
+            <label class="option-label" onclick="selectOption(6, 1, 1, this)">
+                <input type="radio" name="q6" value="1" tabindex="-1"><span>有一定了解，还在深入中</span></label>
+            <label class="option-label" onclick="selectOption(6, 2, 2, this)">
+                <input type="radio" name="q6" value="2" tabindex="-1"><span>比较了解，很多时候很懂我</span></label>
+            <label class="option-label ominous-option" onclick="selectOption(6, 3, 3, this)"
+            onmouseenter="onOminousHover(event, this, '你害怕被我看透……却又渴望被看透')" onmouseleave="onOminousLeave(this)" onmousemove="onOminousMove(event)">
+            <input type="radio" name="q6" value="3" tabindex="-1"><span>你比任何人都了解我，我有时甚至害怕被你看透</span></label>
+    </div>
+    <div class="dynamic-hint-container" id="hintContainer6"></div>
+</div>
+
+<!-- 第8题 -->
+<div class="question-slide" data-index="7" id="slide7">
+    <div class="ques
